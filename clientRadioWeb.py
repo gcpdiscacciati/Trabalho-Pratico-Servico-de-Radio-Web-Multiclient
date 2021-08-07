@@ -5,7 +5,7 @@ import socket
 import pyaudio
 import threading
 
-serverName = '192.168.0.120'
+serverName = '127.0.0.1'
 serverPort = 12000
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 clientSocket.connect((serverName, serverPort))
