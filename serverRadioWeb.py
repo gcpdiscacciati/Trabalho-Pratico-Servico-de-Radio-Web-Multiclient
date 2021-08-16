@@ -29,7 +29,7 @@ def musicReading(queue):
         data = wf.readframes(CHUNK)
         i=1
         while data:
-            queue.put(data, False)
+            queue.put(data, True)
             data = wf.readframes(CHUNK)
         wf.close()
         j += 1
