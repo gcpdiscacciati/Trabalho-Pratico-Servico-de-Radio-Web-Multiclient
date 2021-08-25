@@ -2,80 +2,75 @@
 # coding: utf-8
 
 import socket
+import ssl
 import wave
 import threading
 import time
+from queue import Queue
 
-NUMERO_MUSICAS = 5
 serverPort = 12000
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 serverSocket.bind(('', serverPort))
 serverSocket.listen(0)
 
+context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+context.load_cert_chain(certfile='CA/cert-meucertificado.pem', keyfile='CA/priv-minhachave.pem')
+serverSocket_ssl = context.wrap_socket(serverSocket, server_side=True)
+
+print("servidor pronto para receber")
+
+
 CHUNK = 2048    # Números de frames de áudio
 
-print("Servidor pronto para enviar...")
+print("Servidor pronto para enviar")
 
-#Lista que abrigará todas as conexões
-listaConexao = []
 
-#Função que lê as músicas em looping
-def musicReading():
-    try:
-        #Variável de controle de qual música tocar
-        j=1
-        global listaConexao
-
-        while True:
-            fname = "songs/Track " + str(j) + ".wav"
-            wf = wave.open(fname, 'rb')
+#Função que lê as músicas
+def musicReading(queue):
+    j=1
+    
+    #Limitado para 3 apenas para teste
+    while j < 3:
+       
+        fname = "songs/Track " + str(j) + ".wav"
+        wf = wave.open(fname, 'rb')
+        data = wf.readframes(CHUNK)
+        i=1
+        while data:
+            queue.put(data, True)
             data = wf.readframes(CHUNK)
+        wf.close()
+        j += 1
+        if j==3:
+            j=1
 
-            while data:
-                #Caso não haja conexões, aguarda um tempo e continua lendo frames da música
-                if (len(listaConexao)==0):
-                    #0.03s foi o tempo em que a execução sem nenhum clientes mais se aproximou da execução com clientes
-                    #O que da uma impressão de "ao vivo"
-                    time.sleep(0.03)
-                else:
-                    #Envia o mesmo dado para todas as conexões na lista
-                    for conexao in listaConexao:
-                        try:
-                            conexao[0].send(data)
-                        except ConnectionResetError:
-                            #Remove conexões interrompidas da lista
-                            print('Conexao {} removida'.format(conexao[1]))
-                            conexaoRemovida = conexao
-                            listaConexao.remove(conexao)
-                            conexaoRemovida[0].close()
-                            
-                            
-                data = wf.readframes(CHUNK)
-            #Fecha a música atual e incrementa a variável de controle    
-            wf.close()
-            j += 1
-            #Ao chegar na última música, retorna para a primeira
-            if j==NUMERO_MUSICAS+1:
-                j=1
-    except KeyboardInterrupt:
-        return
+#Função que lida com a conexão e envia os dados para os clientes
+def connection(connectionSocket, addr, queue):
+    #wf = wave.open(fname, 'rb')
+    #print("entrou no connection")
+    #connectionSocket, addr = serverSocket.accept()
+    print("Conexão vinda de {}".format(addr))
 
+    
+    while True:
+        data = queue.get(True)
+        connectionSocket.send(data)
+    connectionSocket.close()        
 
 def main():
-    global listaConexao
-
-    #Inicia a thread de leitura e envio das músicas
-    th = threading.Thread(target=musicReading, args=())
-    th.start()
-
-    try:   
-        while True:
-            #Aguarda por conexões e as adiciona na lista quando aceitas
-            connectionSocket, addr = serverSocket.accept()
-            listaConexao.append((connectionSocket, addr))
-            print("-----> Recebendo conexão de {} <-----".format(addr))
-    except KeyboardInterrupt:
-        print("Servidor interrompido")    
-        return    	
+    i = 1
+    #o parâmetro de Queue não pode ser vazio, ou então a fila não terá limite e causará problemas de uso de memória
+    q = Queue(1)
+    th2 = threading.Thread(target=musicReading, args=(q, ))
+    th2.start()
+    while True:
+        connectionSocket, addr = serverSocket_ssl.accept()
+        print("-----> Recebendo conexão pela {}a. vez! <-----".format(i))
+        th = threading.Thread(target=connection, args=(connectionSocket, addr, q))
+        
+        th.start()
+      
+        i = i + 1
+                	
 if __name__ == '__main__':
 	main()
