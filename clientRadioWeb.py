@@ -7,7 +7,7 @@ import pyaudio
 import threading
 
 #Alterar para o IP do servidor
-serverName = 'localhost'
+serverName = '10.8.0.4'
 serverPort = 12000
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
