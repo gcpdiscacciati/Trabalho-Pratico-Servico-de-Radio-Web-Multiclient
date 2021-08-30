@@ -6,7 +6,7 @@ import ssl
 import pyaudio
 
 #Alterar para o IP do servidor
-serverName = '10.8.0.4'
+serverName = '10.8.0.9'
 serverPort = 12000
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
