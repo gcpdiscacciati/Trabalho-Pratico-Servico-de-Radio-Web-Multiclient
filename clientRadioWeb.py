@@ -4,13 +4,13 @@
 import socket
 import ssl
 import pyaudio
-import threading
 
 #Alterar para o IP do servidor
 serverName = '10.8.0.4'
 serverPort = 12000
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+#Criptografia ssl
 context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
 context.load_verify_locations('CA/cacert.pem')
 clientSocket_ssl = context.wrap_socket(clientSocket, server_hostname=serverName)
