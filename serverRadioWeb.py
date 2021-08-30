@@ -2,7 +2,6 @@
 # coding: utf-8
 
 import socket
-import ssl
 import wave
 import threading
 import time
@@ -12,11 +11,6 @@ serverPort = 12000
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 serverSocket.bind(('', serverPort))
 serverSocket.listen(0)
-
-# Criptografia ssl
-context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-context.load_cert_chain(certfile='CA/cert-meucertificado.pem', keyfile='CA/priv-minhachave.pem')
-serverSocket_ssl = context.wrap_socket(serverSocket, server_side=True)
 
 CHUNK = 2048  # Números de frames de áudio
 
@@ -77,7 +71,7 @@ def main():
     try:
         while True:
             # Aguarda por conexões e as adiciona na lista quando aceitas
-            connectionSocket, addr = serverSocket_ssl.accept()
+            connectionSocket, addr = serverSocket.accept()
             listaConexao.append((connectionSocket, addr))
             print("-----> Recebendo conexão de {} <-----".format(addr))
     except KeyboardInterrupt:
